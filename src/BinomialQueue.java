@@ -33,9 +33,25 @@ class BinomialHeap<K> {
      * <p>
      * The isHeap method checks whether or not the subtree of this node
      * satisfies the heap property.
+     *
+     * Has 2^k nodes.
+     * Has a depth of k.
+     *
      */
     boolean isHeap() {
-        return false;  // replace this line with your code
+        PList<BinomialHeap<K>> workingChildren = children;
+        if (workingChildren == null) return true;
+        BinomialHeap<K> child = PList.getFirst(workingChildren);
+        while(child != null) {
+            // If the child is not smaller than the parent, or the child is not heap then the parent isn't heap.
+            if (!child.lessEq.test(child.key, key) || !child.isHeap()) return false;
+
+            // Iterate through next item in list
+            workingChildren = PList.getNext(workingChildren);
+            if (workingChildren == null) return true;
+            child = PList.getFirst(workingChildren);
+        }
+        return true;
     }
 
     public String toString() {
@@ -79,7 +95,24 @@ public class BinomialQueue<K> {
      * satisfies the heap property.
      */
     public boolean isHeap() {
-        return false;  // replace this line with your code
+        PList<BinomialHeap<K>> workingForest = forest;
+        if (workingForest == null) return true;
+        BinomialHeap<K> workingTree = PList.getFirst(workingForest);
+        K max = workingTree.key;
+        return isHeapHelper(max, workingForest);
+    }
+
+    private boolean isHeapHelper(K max, PList<BinomialHeap<K>> workingForest) {
+        if (workingForest == null) return true;
+        BinomialHeap<K> workingTree = PList.getFirst(workingForest);
+        // Check if current forest is heapy.
+        if (!workingTree.isHeap()) return false;
+        // Check if each max key in each forest is sequential.
+        if (lessEq.test(max, workingTree.key)) {
+            max = workingTree.key;
+        } //else return false;
+        workingForest = PList.getNext(workingForest);
+        return isHeapHelper(max, workingForest);
     }
 
     public String toString() {
@@ -106,7 +139,26 @@ public class BinomialQueue<K> {
      */
     static <K> PList<BinomialHeap<K>>
     insert(BinomialHeap<K> n, PList<BinomialHeap<K>> ns) {
-        return null;  // replace this line with your code
+        if (n == null) throw new RuntimeException("node to insert must not be null");
+
+        PList<BinomialHeap<K>> workingForest = ns;
+
+        // If given forest is empty, add n to a new list and return.
+        if (workingForest == null) return new PList<>(n, null);
+
+        BinomialHeap<K> first = PList.getFirst(workingForest);
+        if(n.height < first.height) {
+            return PList.addFront(n, workingForest);
+        }
+
+        if (first.height == n.height) {
+            BinomialHeap<K> linkedNode = first.link(n);
+            workingForest = PList.remove(first, workingForest);
+            return insert(linkedNode, workingForest);
+        }
+
+        return PList.addFront(first, insert(n, PList.getNext(workingForest)));
+
     }
 
     /**
@@ -121,7 +173,25 @@ public class BinomialQueue<K> {
      */
     static <K> PList<BinomialHeap<K>>
     merge(PList<BinomialHeap<K>> ns1, PList<BinomialHeap<K>> ns2) {
-        return null;  // replace this line with your code
+        if (ns1 == null) return ns2;
+        if (ns2 == null) return ns1;
+
+        BinomialHeap<K> first1 = PList.getFirst(ns1);
+        BinomialHeap<K> first2 = PList.getFirst(ns2);
+
+        // test if first1.height is equal to first2.height
+        //      if first1 is less than first2
+        //      else first2 is less than first 1
+        if (first1.height == first2.height) {
+            BinomialHeap<K> linkedNode = first1.link(first2);
+            return insert(linkedNode, merge(PList.getNext(ns1),PList.getNext(ns2)));
+        }
+
+        if (first1.height < first2.height) {
+            return PList.addFront(first1,merge(PList.getNext(ns1), ns2));
+        }
+
+        return PList.addFront(first2,merge(ns1, PList.getNext(ns2)));
     }
     
 }
